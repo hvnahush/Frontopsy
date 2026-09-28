@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Link from '@mui/material/Link'
+import { useAppSelector } from '../app/hooks'
 import FaqSection from '../components/how-it-works/FaqSection'
 import FixExampleSection from '../components/how-it-works/FixExampleSection'
 import LookingForSection from '../components/how-it-works/LookingForSection'
@@ -14,14 +15,17 @@ import StepsSection from '../components/how-it-works/StepsSection'
 import UnderHoodSection from '../components/how-it-works/UnderHoodSection'
 import Logo from '../components/Logo'
 import LoginPromptDialog from '../components/LoginPromptDialog'
+import UserMenu from '../components/UserMenu'
 import { INK } from '../theme'
 import { STEP_ORANGE } from '../utils/constants'
 
 export default function HowItWorks() {
   const navigate = useNavigate()
+  const { user, sessionChecked } = useAppSelector((state) => state.auth)
   const [promptOpen, setPromptOpen] = useState(false)
 
   const goToLogin = () => navigate('/login')
+  const startCheckup = () => (user ? navigate('/dashboard') : setPromptOpen(true))
 
   return (
     <Box sx={pageBgSx}>
@@ -44,22 +48,35 @@ export default function HowItWorks() {
         <Stack direction="row" spacing={2.5} sx={{ alignItems: 'center' }}>
           <Link
             component="button"
-            onClick={() => navigate('/how-it-works')}
+            onClick={() => navigate(user ? '/how-it-works' : '/')}
             underline="always"
             sx={{ fontWeight: 700, fontSize: 14.5, color: INK }}
           >
             How it works
           </Link>
-          <Button variant="outlined" onClick={goToLogin} sx={{ borderRadius: 999, px: 2.5 }}>
-            Log in
-          </Button>
-          <Button
-            variant="contained"
-            onClick={goToLogin}
-            sx={{ borderRadius: 999, px: 3, bgcolor: INK, '&:hover': { bgcolor: INK, filter: 'brightness(1.15)' } }}
-          >
-            Sign up free
-          </Button>
+          {user ? (
+            <>
+              <Button variant="outlined" onClick={() => navigate('/dashboard')} sx={{ borderRadius: 999, px: 2.5 }}>
+                Dashboard
+              </Button>
+              <UserMenu />
+            </>
+          ) : (
+            sessionChecked && (
+              <>
+                <Button variant="outlined" onClick={goToLogin} sx={{ borderRadius: 999, px: 2.5 }}>
+                  Log in
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/login?mode=signup')}
+                  sx={{ borderRadius: 999, px: 3, bgcolor: INK, '&:hover': { bgcolor: INK, filter: 'brightness(1.15)' } }}
+                >
+                  Sign up free
+                </Button>
+              </>
+            )
+          )}
         </Stack>
       </Box>
 
@@ -128,7 +145,7 @@ export default function HowItWorks() {
           vibes-based guessing.
         </Typography>
 
-        <Button variant="contained" size="large" onClick={() => setPromptOpen(true)} sx={{ px: 4, py: 1.4, fontSize: 16 }}>
+        <Button variant="contained" size="large" onClick={startCheckup} sx={{ px: 4, py: 1.4, fontSize: 16 }}>
           Run my first checkup
         </Button>
       </Box>

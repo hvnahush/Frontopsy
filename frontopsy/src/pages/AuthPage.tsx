@@ -1,6 +1,8 @@
-import { useState, type ChangeEvent, type FormEvent, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent, type MouseEvent, type ReactNode } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
+import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
+import ButtonBase from '@mui/material/ButtonBase'
 import Stack from '@mui/material/Stack'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
@@ -13,13 +15,13 @@ import Divider from '@mui/material/Divider'
 import Alert from '@mui/material/Alert'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
-import Avatar from '@mui/material/Avatar'
 import Link from '@mui/material/Link'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import Logo from '../components/Logo'
 import { INK } from '../theme'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
-import { clearAuthError, login, loginWithGoogle, logout, signup } from '../features/auth/authSlice'
+import { clearAuthError, login, loginWithGoogle, signup } from '../features/auth/authSlice'
 
 type AuthMode = 'login' | 'signup'
 
@@ -41,14 +43,6 @@ interface FieldLabelProps {
   children: ReactNode
   action?: ReactNode
 }
-
-const LogoMark = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M6 3v6a5 5 0 0 0 10 0V3" stroke={INK} strokeWidth="2" strokeLinecap="round" />
-    <circle cx="18" cy="15" r="3" stroke={INK} strokeWidth="2" />
-    <path d="M11 14v-1" stroke={INK} strokeWidth="2" strokeLinecap="round" />
-  </svg>
-)
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -99,19 +93,27 @@ function FieldLabel({ htmlFor, children, action }: FieldLabelProps) {
 
 export default function AuthPage() {
   const dispatch = useAppDispatch()
-  const { user, status, error } = useAppSelector((state) => state.auth)
+  const { status, error } = useAppSelector((state) => state.auth)
 
-  const [mode, setMode] = useState<AuthMode>('login')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const mode: AuthMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState<AuthForm>({ name: '', email: '', password: '', confirm: '' })
   const [formError, setFormError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const isLoading = status === 'loading'
 
+  // Don't show an error left over from an earlier visit to this page.
+  useEffect(() => {
+    dispatch(clearAuthError())
+  }, [dispatch])
+
   const switchMode = (_event: MouseEvent<HTMLElement>, nextMode: AuthMode | null) => {
     if (!nextMode || nextMode === mode) return
-    setMode(nextMode)
+    setSearchParams(nextMode === 'signup' ? { mode: 'signup' } : {}, { replace: true })
     setFormError('')
+    setNotice('')
     dispatch(clearAuthError())
   }
 
@@ -122,6 +124,7 @@ export default function AuthPage() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError('')
+    setNotice('')
 
     if (mode === 'signup') {
       if (!form.name.trim()) return setFormError('Tell us your name.')
@@ -132,48 +135,6 @@ export default function AuthPage() {
     }
 
     dispatch(login({ email: form.email, password: form.password }))
-  }
-
-  if (user) {
-    return (
-      <Box sx={pageBgSx}>
-        <Paper
-          sx={{
-            position: 'relative',
-            zIndex: 1,
-            margin: '120px auto',
-            maxWidth: 380,
-            p: 5,
-            textAlign: 'center',
-            border: `2px solid ${INK}`,
-            borderRadius: '28px',
-            boxShadow: `10px 10px 0 ${INK}`,
-          }}
-        >
-          <Avatar
-            src={user.avatar}
-            sx={{ width: 72, height: 72, mx: 'auto', mb: 2, border: `2px solid ${INK}`, bgcolor: 'primary.main', fontSize: 28, fontWeight: 700 }}
-          >
-            {user.name?.[0]?.toUpperCase() ?? '?'}
-          </Avatar>
-          <Typography variant="h5" component="h1" sx={{ mb: 0.5 }}>
-            you're in, {user.name?.split(' ')[0] ?? 'bestie'}.
-          </Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
-            {user.email}
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => {
-              dispatch(logout())
-              setMode('login')
-            }}
-          >
-            Log out
-          </Button>
-        </Paper>
-      </Box>
-    )
   }
 
   return (
@@ -192,36 +153,9 @@ export default function AuthPage() {
         }}
       >
         <Box component="section" sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1.25,
-              bgcolor: 'secondary.main',
-              border: `2px solid ${INK}`,
-              borderRadius: 999,
-              pl: 0.5,
-              pr: 2.5,
-              py: 0.5,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'grid',
-                placeItems: 'center',
-                width: 30,
-                height: 30,
-                bgcolor: '#fff',
-                border: `2px solid ${INK}`,
-                borderRadius: 999,
-              }}
-            >
-              <LogoMark />
-            </Box>
-            <Typography sx={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 18 }}>
-              frontopsy
-            </Typography>
-          </Box>
+          <ButtonBase component={RouterLink} to="/" aria-label="Frontopsy home" sx={{ borderRadius: 999 }}>
+            <Logo />
+          </ButtonBase>
 
           <Typography
             variant="h1"
@@ -404,6 +338,7 @@ export default function AuthPage() {
                       id="name"
                       fullWidth
                       placeholder="Ada Lovelace"
+                      autoComplete="name"
                       value={form.name}
                       onChange={handleChange('name')}
                       required
@@ -418,6 +353,7 @@ export default function AuthPage() {
                     type="email"
                     fullWidth
                     placeholder="you@email.com"
+                    autoComplete="email"
                     value={form.email}
                     onChange={handleChange('email')}
                     required
@@ -429,7 +365,12 @@ export default function AuthPage() {
                     htmlFor="password"
                     action={
                       mode === 'login' && (
-                        <Link href="#forgot" onClick={(e) => e.preventDefault()} sx={{ fontSize: 12.5, fontWeight: 600 }}>
+                        <Link
+                          component="button"
+                          type="button"
+                          onClick={() => setNotice('Password reset isn’t available yet. Email us and we’ll sort it out.')}
+                          sx={{ fontSize: 12.5, fontWeight: 600 }}
+                        >
                           Forgot it?
                         </Link>
                       )
@@ -442,6 +383,7 @@ export default function AuthPage() {
                     fullWidth
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     value={form.password}
                     onChange={handleChange('password')}
                     required
@@ -450,7 +392,12 @@ export default function AuthPage() {
                       input: {
                         endAdornment: (
                           <InputAdornment position="end">
-                            <IconButton onClick={() => setShowPassword((s) => !s)} edge="end" size="small">
+                            <IconButton
+                              onClick={() => setShowPassword((s) => !s)}
+                              edge="end"
+                              size="small"
+                              aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
                               {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                             </IconButton>
                           </InputAdornment>
@@ -468,6 +415,7 @@ export default function AuthPage() {
                       fullWidth
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
+                      autoComplete="new-password"
                       value={form.confirm}
                       onChange={handleChange('confirm')}
                       required
@@ -476,6 +424,7 @@ export default function AuthPage() {
                 )}
 
                 {(formError || error) && <Alert severity="error">{formError || error}</Alert>}
+                {notice && <Alert severity="info">{notice}</Alert>}
 
                 <Button type="submit" variant="contained" size="large" fullWidth disabled={isLoading}>
                   {isLoading ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Sign up'}

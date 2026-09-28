@@ -7,9 +7,10 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Link from '@mui/material/Link'
+import Snackbar from '@mui/material/Snackbar'
 import Dashboard from '../components/Dashboard'
 import Logo from '../components/Logo'
-import LoginPromptDialog from '../components/LoginPromptDialog'
+import UserMenu from '../components/UserMenu'
 import { INK } from '../theme'
 import { PLAN_ORANGE, SYMPTOMS } from '../utils/constants'
 
@@ -26,20 +27,17 @@ interface InfoCardProps {
   textColor?: string
   title: string
   body: string
-  onClick: () => void
 }
 
-function InfoCard({ bgcolor, textColor = INK, title, body, onClick }: InfoCardProps) {
+function InfoCard({ bgcolor, textColor = INK, title, body }: InfoCardProps) {
   return (
     <Paper
-      onClick={onClick}
       sx={{
         bgcolor,
         color: textColor,
         border: `2px solid ${INK}`,
         borderRadius: '20px',
         p: 3,
-        cursor: 'pointer',
         boxShadow: `6px 6px 0 ${INK}`,
       }}
     >
@@ -53,11 +51,25 @@ function InfoCard({ bgcolor, textColor = INK, title, body, onClick }: InfoCardPr
 
 export default function Home() {
   const navigate = useNavigate()
-  const [promptOpen, setPromptOpen] = useState(false)
+  const [toast, setToast] = useState('')
+  const [checkedSymptoms, setCheckedSymptoms] = useState(
+    () => new Set(SYMPTOMS.filter((s) => s.checked).map((s) => s.key)),
+  )
 
-  const requireAuth = () => setPromptOpen(true)
-  const goToLogin = () => navigate('/login')
-  const checkedCount = SYMPTOMS.filter((s) => s.checked).length
+  const checkedCount = checkedSymptoms.size
+
+  const toggleSymptom = (key: string) => {
+    setCheckedSymptoms((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const openPastCheckups = () => {
+    setToast('No past checkups yet. Run your first one to start your history.')
+  }
 
   return (
     <Box sx={pageBgSx}>
@@ -86,12 +98,10 @@ export default function Home() {
           >
             How it works
           </Link>
-          <Button variant="outlined" onClick={requireAuth} sx={{ borderRadius: 999, px: 2.5 }}>
+          <Button variant="outlined" onClick={openPastCheckups} sx={{ borderRadius: 999, px: 2.5 }}>
             past checkups
           </Button>
-          <Button variant="contained" onClick={goToLogin} sx={{ borderRadius: 999, px: 3 }}>
-            Log in
-          </Button>
+          <UserMenu />
         </Stack>
       </Box>
 
@@ -142,25 +152,29 @@ export default function Home() {
           </Typography>
 
           <Stack direction="row" spacing={1.25} sx={{ flexWrap: 'wrap', gap: 1.25 }}>
-            {SYMPTOMS.map((symptom) => (
-              <Chip
-                key={symptom.key}
-                label={symptom.label}
-                onClick={requireAuth}
-                icon={symptom.checked ? <CheckMark /> : undefined}
-                sx={{
-                  bgcolor: symptom.checked ? 'secondary.main' : '#fff',
-                  color: INK,
-                  fontWeight: 700,
-                  px: 0.5,
-                  cursor: 'pointer',
-                }}
-              />
-            ))}
+            {SYMPTOMS.map((symptom) => {
+              const checked = checkedSymptoms.has(symptom.key)
+              return (
+                <Chip
+                  key={symptom.key}
+                  label={symptom.label}
+                  onClick={() => toggleSymptom(symptom.key)}
+                  aria-pressed={checked}
+                  icon={checked ? <CheckMark /> : undefined}
+                  sx={{
+                    bgcolor: checked ? 'secondary.main' : '#fff',
+                    color: INK,
+                    fontWeight: 700,
+                    px: 0.5,
+                    cursor: 'pointer',
+                  }}
+                />
+              )
+            })}
           </Stack>
         </Box>
 
-        <Dashboard onRequireAuth={requireAuth} checkedCount={checkedCount} />
+        <Dashboard checkedCount={checkedCount} />
       </Box>
 
       <Box
@@ -178,24 +192,27 @@ export default function Home() {
           bgcolor="warning.main"
           title="Why it's slow"
           body="Blocking scripts, chonky images, bloated bundles, fonts that ghost you."
-          onClick={requireAuth}
         />
         <InfoCard
           bgcolor="success.main"
           title="Why it looks broken"
           body="Overlaps, sideways scroll, layout jumps, stuff that only breaks on phones."
-          onClick={requireAuth}
         />
         <InfoCard
           bgcolor={PLAN_ORANGE}
           textColor="#fff"
           title="The glow-up plan"
           body="Every fix with copy-paste code, ranked by what helps most."
-          onClick={requireAuth}
         />
       </Box>
 
-      <LoginPromptDialog open={promptOpen} onClose={() => setPromptOpen(false)} onLogin={goToLogin} />
+      <Snackbar
+        open={toast !== ''}
+        autoHideDuration={4000}
+        onClose={() => setToast('')}
+        message={toast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   )
 }

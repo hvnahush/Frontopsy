@@ -1,64 +1,24 @@
 import { createAsyncThunk, createSlice, isFulfilled, isPending, isRejected } from '@reduxjs/toolkit'
 import {
   authenticateUser,
-  clearSession,
-  readSession,
+  authenticateWithGoogle,
+  endSession,
+  fetchSessionUser,
   registerUser,
-  saveSession,
-  upsertOAuthUser,
   type Credentials,
   type SignupDetails,
   type User,
-} from './authStorage'
+} from './authApi'
 
-interface GoogleProfile {
-  name: string
-  email: string
-  picture?: string
-}
+export const signup = createAsyncThunk<User, SignupDetails>('auth/signup', registerUser)
 
-export const signup = createAsyncThunk<User, SignupDetails>(
-  'auth/signup',
-  async ({ name, email, password }) => {
-    const user = await registerUser({ name, email, password })
-    saveSession(user)
-    return user
-  },
-)
+export const login = createAsyncThunk<User, Credentials>('auth/login', authenticateUser)
 
-export const login = createAsyncThunk<User, Credentials>(
-  'auth/login',
-  async ({ email, password }) => {
-    const user = await authenticateUser({ email, password })
-    saveSession(user)
-    return user
-  },
-)
+export const loginWithGoogle = createAsyncThunk<User, string>('auth/loginWithGoogle', authenticateWithGoogle)
 
-export const loginWithGoogle = createAsyncThunk<User, string>(
-  'auth/loginWithGoogle',
-  async (accessToken) => {
-    const response = await fetch(
-      'https://www.googleapis.com/oauth2/v3/userinfo',
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    )
+export const restoreSession = createAsyncThunk<User | null>('auth/restoreSession', fetchSessionUser)
 
-    if (!response.ok) {
-      throw new Error('Could not verify your Google account. Please try again.')
-    }
-
-    const profile: GoogleProfile = await response.json()
-    const user = upsertOAuthUser({
-      name: profile.name,
-      email: profile.email,
-      avatar: profile.picture,
-      provider: 'google',
-    })
-
-    saveSession(user)
-    return user
-  },
-)
+export const logout = createAsyncThunk('auth/logout', endSession)
 
 export type AuthStatus = 'idle' | 'loading' | 'succeeded' | 'failed'
 
@@ -66,12 +26,15 @@ export interface AuthState {
   user: User | null
   status: AuthStatus
   error: string | null
+  /** False until the initial session lookup finishes, so pages don't flash logged-out UI. */
+  sessionChecked: boolean
 }
 
 const initialState: AuthState = {
-  user: readSession(),
+  user: null,
   status: 'idle',
   error: null,
+  sessionChecked: false,
 }
 
 const authThunks = [signup, login, loginWithGoogle] as const
@@ -80,18 +43,24 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout(state) {
-      state.user = null
-      state.status = 'idle'
-      state.error = null
-      clearSession()
-    },
     clearAuthError(state) {
       state.error = null
     },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(restoreSession.fulfilled, (state, action) => {
+        state.user = action.payload
+        state.sessionChecked = true
+      })
+      .addCase(restoreSession.rejected, (state) => {
+        state.sessionChecked = true
+      })
+      .addCase(logout.pending, (state) => {
+        state.user = null
+        state.status = 'idle'
+        state.error = null
+      })
       .addMatcher(isPending(...authThunks), (state) => {
         state.status = 'loading'
         state.error = null
@@ -107,5 +76,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { logout, clearAuthError } = authSlice.actions
+export const { clearAuthError } = authSlice.actions
 export default authSlice.reducer

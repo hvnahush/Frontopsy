@@ -1,4 +1,5 @@
-import { useState, type ComponentType } from 'react'
+import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
@@ -8,24 +9,46 @@ import Button from '@mui/material/Button'
 import { INK } from '../theme'
 import { CHECKUP_TABS, STEP_ORANGE, type CheckupTab } from '../utils/constants'
 
-interface PanelProps {
-  onRequireAuth: () => void
-}
+const SCREENSHOT_TYPES = ['image/png', 'image/jpeg']
+const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024
 
-interface DashboardProps extends PanelProps {
+interface DashboardProps {
   checkedCount: number
 }
 
-function LinkPanel({ onRequireAuth }: PanelProps) {
+interface Screenshot {
+  file: File
+  previewUrl: string
+}
+
+interface PanelProps<T> {
+  value: T
+  onChange: (value: T) => void
+}
+
+function isValidSiteUrl(value: string) {
+  try {
+    const url = new URL(value.trim())
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.includes('.')
+  } catch {
+    return false
+  }
+}
+
+function LinkPanel({ value, onChange }: PanelProps<string>) {
+  const showError = value.trim() !== '' && !isValidSiteUrl(value)
+
   return (
     <Box>
       <Typography sx={labelSx}>Your site's link</Typography>
       <TextField
         fullWidth
+        type="url"
         placeholder="https://yourwebsite.com"
-        onClick={onRequireAuth}
-        onFocus={onRequireAuth}
-        slotProps={{ htmlInput: { readOnly: true } }}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        error={showError}
+        helperText={showError ? 'Enter a full link, like https://yourwebsite.com' : undefined}
         sx={{ mb: 1 }}
       />
       <Typography sx={helperSx}>
@@ -35,7 +58,7 @@ function LinkPanel({ onRequireAuth }: PanelProps) {
   )
 }
 
-function PasteCodePanel({ onRequireAuth }: PanelProps) {
+function PasteCodePanel({ value, onChange }: PanelProps<string>) {
   return (
     <Box>
       <Typography sx={labelSx}>Paste your HTML / CSS</Typography>
@@ -43,48 +66,116 @@ function PasteCodePanel({ onRequireAuth }: PanelProps) {
         fullWidth
         multiline
         minRows={4}
+        maxRows={12}
         placeholder="<html>...</html>"
-        onClick={onRequireAuth}
-        onFocus={onRequireAuth}
-        slotProps={{ htmlInput: { readOnly: true } }}
-        sx={{ mb: 1 }}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        sx={{ mb: 1, '& textarea': { fontFamily: 'ui-monospace, monospace', fontSize: 13 } }}
       />
       <Typography sx={helperSx}>We render it in a sandboxed page and run the same checks.</Typography>
     </Box>
   )
 }
 
-function ScreenshotPanel({ onRequireAuth }: PanelProps) {
+function ScreenshotPanel({ value, onChange }: PanelProps<Screenshot | null>) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState('')
+
+  const acceptFile = (file: File | undefined) => {
+    if (!file) return
+    if (!SCREENSHOT_TYPES.includes(file.type)) return setError('That file isn’t a PNG or JPG.')
+    if (file.size > MAX_SCREENSHOT_BYTES) return setError('Screenshots need to be under 10 MB.')
+    setError('')
+
+    const reader = new FileReader()
+    reader.onload = () => onChange({ file, previewUrl: reader.result as string })
+    reader.onerror = () => setError('Couldn’t read that file. Try another one.')
+    reader.readAsDataURL(file)
+  }
+
+  const openPicker = () => inputRef.current?.click()
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault()
+    acceptFile(event.dataTransfer.files[0])
+  }
+
   return (
     <Box>
       <Typography sx={labelSx}>Upload a screenshot</Typography>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={SCREENSHOT_TYPES.join(',')}
+        hidden
+        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+          acceptFile(event.target.files?.[0])
+          event.target.value = ''
+        }}
+      />
       <Box
-        onClick={onRequireAuth}
+        role="button"
+        tabIndex={0}
+        onClick={openPicker}
+        onKeyDown={(event) => (event.key === 'Enter' || event.key === ' ') && openPicker()}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={handleDrop}
         sx={{
           border: `2px dashed ${INK}`,
           borderRadius: '12px',
-          p: 3,
+          p: value ? 1.5 : 3,
           textAlign: 'center',
           cursor: 'pointer',
           mb: 1,
         }}
       >
-        <Typography sx={{ fontWeight: 700 }}>Click to upload a PNG or JPG</Typography>
+        {value ? (
+          <Stack spacing={1} sx={{ alignItems: 'center' }}>
+            <Box
+              component="img"
+              src={value.previewUrl}
+              alt="Screenshot preview"
+              sx={{ maxWidth: '100%', maxHeight: 180, borderRadius: '8px', border: `2px solid ${INK}` }}
+            />
+            <Typography sx={{ fontSize: 13, fontWeight: 700, wordBreak: 'break-all' }}>{value.file.name}</Typography>
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Click to swap it for another</Typography>
+          </Stack>
+        ) : (
+          <Typography sx={{ fontWeight: 700 }}>Click or drop a PNG or JPG here</Typography>
+        )}
       </Box>
+      {error && (
+        <Typography sx={{ ...helperSx, color: 'error.main', mb: 1 }} role="alert">
+          {error}
+        </Typography>
+      )}
       <Typography sx={helperSx}>We'll eyeball it for overlaps, spacing, and broken layout.</Typography>
     </Box>
   )
 }
 
-const TAB_PANELS: Record<CheckupTab, ComponentType<PanelProps>> = {
-  Link: LinkPanel,
-  'Paste code': PasteCodePanel,
-  Screenshot: ScreenshotPanel,
-}
-
-export default function Dashboard({ onRequireAuth, checkedCount }: DashboardProps) {
+export default function Dashboard({ checkedCount }: DashboardProps) {
   const [tab, setTab] = useState<CheckupTab>('Link')
-  const TabPanel = TAB_PANELS[tab]
+  const [link, setLink] = useState('')
+  const [code, setCode] = useState('')
+  const [screenshot, setScreenshot] = useState<Screenshot | null>(null)
+  const [notice, setNotice] = useState('')
+
+  const ready = {
+    Link: isValidSiteUrl(link),
+    'Paste code': code.trim() !== '',
+    Screenshot: screenshot !== null,
+  }[tab]
+
+  const selectTab = (label: CheckupTab) => {
+    setTab(label)
+    setNotice('')
+  }
+
+  const runCheckup = () => {
+    // The analysis service isn't built yet; be upfront instead of faking a result.
+    setNotice('Your input looks good! Checkups aren’t live yet — the analysis engine is still being built.')
+  }
 
   return (
     <Box component="section" sx={{ position: 'relative', justifySelf: 'center', width: '100%', maxWidth: 460 }}>
@@ -141,7 +232,7 @@ export default function Dashboard({ onRequireAuth, checkedCount }: DashboardProp
             <Box
               key={label}
               component="button"
-              onClick={() => setTab(label)}
+              onClick={() => selectTab(label)}
               sx={{
                 flex: 1,
                 border: 0,
@@ -160,17 +251,26 @@ export default function Dashboard({ onRequireAuth, checkedCount }: DashboardProp
           ))}
         </Stack>
 
-        <TabPanel onRequireAuth={onRequireAuth} />
+        {tab === 'Link' && <LinkPanel value={link} onChange={setLink} />}
+        {tab === 'Paste code' && <PasteCodePanel value={code} onChange={setCode} />}
+        {tab === 'Screenshot' && <ScreenshotPanel value={screenshot} onChange={setScreenshot} />}
 
         <Button
           fullWidth
           variant="contained"
           size="large"
-          onClick={onRequireAuth}
+          onClick={runCheckup}
+          disabled={!ready}
           sx={{ py: 1.5, fontSize: 16, mt: 3 }}
         >
           Run the vibe check
         </Button>
+
+        {notice && (
+          <Alert severity="info" onClose={() => setNotice('')} sx={{ mt: 2 }}>
+            {notice}
+          </Alert>
+        )}
 
         <Typography sx={{ textAlign: 'center', fontSize: 12.5, color: 'text.secondary', mt: 2 }}>
           {checkedCount} symptoms picked. Takes about 30 seconds.
