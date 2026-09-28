@@ -21,7 +21,15 @@ function CheckMark() {
   )
 }
 
-function InfoCard({ bgcolor, textColor = INK, title, body, onClick }) {
+interface InfoCardProps {
+  bgcolor: string
+  textColor?: string
+  title: string
+  body: string
+  onClick: () => void
+}
+
+function InfoCard({ bgcolor, textColor = INK, title, body, onClick }: InfoCardProps) {
   return (
     <Paper
       onClick={onClick}
@@ -76,7 +84,7 @@ export default function Home() {
             underline="always"
             sx={{ fontWeight: 700, fontSize: 14.5, color: INK }}
           >
-            how it works
+            How it works
           </Link>
           <Button variant="outlined" onClick={requireAuth} sx={{ borderRadius: 999, px: 2.5 }}>
             past checkups
@@ -101,7 +109,7 @@ export default function Home() {
       >
         <Box component="section" sx={{ position: 'relative' }}>
           <Chip
-            label="free, no signup"
+              label="free. just sign up ✨"
             sx={{
               position: 'absolute',
               top: -34,

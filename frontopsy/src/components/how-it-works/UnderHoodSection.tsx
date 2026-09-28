@@ -2,9 +2,9 @@ import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import { INK } from '../../theme'
-import { UNDER_HOOD_ITEMS } from '../../utils/constants'
+import { UNDER_HOOD_ITEMS, type UnderHoodItem } from '../../utils/constants'
 
-function HoodCard({ eyebrow, title, body, accent }) {
+function HoodCard({ eyebrow, title, body, accent }: UnderHoodItem) {
   return (
     <Paper
       sx={{

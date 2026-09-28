@@ -26,10 +26,6 @@ export const theme = createTheme({
           borderRadius: 12,
           border: '2px solid #14121f',
         },
-        containedPrimary: {
-          boxShadow: '4px 4px 0 #14121f',
-          '&:hover': { boxShadow: '4px 4px 0 #14121f', filter: 'brightness(1.05)' },
-        },
         outlined: {
           borderColor: '#14121f',
           color: '#14121f',

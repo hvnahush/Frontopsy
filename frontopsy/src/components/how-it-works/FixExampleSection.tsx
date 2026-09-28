@@ -7,9 +7,9 @@ import Chip from '@mui/material/Chip'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { INK } from '../../theme'
-import { FIX_EXAMPLE } from '../../utils/constants'
+import { FIX_EXAMPLE, type FixExampleView } from '../../utils/constants'
 
-function PhonePreview({ broken }) {
+function PhonePreview({ broken }: { broken: boolean }) {
   return (
     <Box
       sx={{
@@ -77,7 +77,7 @@ function PhonePreview({ broken }) {
 }
 
 export default function FixExampleSection() {
-  const [state, setState] = useState('before')
+  const [state, setState] = useState<FixExampleView>('before')
   const data = FIX_EXAMPLE[state]
 
   return (
@@ -93,7 +93,7 @@ export default function FixExampleSection() {
         <ToggleButtonGroup
           value={state}
           exclusive
-          onChange={(_e, next) => next && setState(next)}
+          onChange={(_e, next: FixExampleView | null) => next && setState(next)}
           sx={{
             bgcolor: '#fff',
             border: `2px solid ${INK}`,

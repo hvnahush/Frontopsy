@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useState, type ChangeEvent, type FormEvent, type MouseEvent, type ReactNode } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
@@ -19,7 +18,29 @@ import Link from '@mui/material/Link'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { INK } from '../theme'
+import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { clearAuthError, login, loginWithGoogle, logout, signup } from '../features/auth/authSlice'
+
+type AuthMode = 'login' | 'signup'
+
+interface AuthForm {
+  name: string
+  email: string
+  password: string
+  confirm: string
+}
+
+interface GoogleContinueButtonProps {
+  onToken: (accessToken: string) => void
+  onError: (message: string) => void
+  disabled: boolean
+}
+
+interface FieldLabelProps {
+  htmlFor: string
+  children: ReactNode
+  action?: ReactNode
+}
 
 const LogoMark = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -46,7 +67,7 @@ const GithubIcon = () => (
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-function GoogleContinueButton({ onToken, onError, disabled }) {
+function GoogleContinueButton({ onToken, onError, disabled }: GoogleContinueButtonProps) {
   const googleLoginHandler = useGoogleLogin({
     onSuccess: (tokenResponse) => onToken(tokenResponse.access_token),
     onError: () => onError('Google sign-in failed. Please try again.'),
@@ -65,7 +86,7 @@ function GoogleContinueButton({ onToken, onError, disabled }) {
   )
 }
 
-function FieldLabel({ htmlFor, children, action }) {
+function FieldLabel({ htmlFor, children, action }: FieldLabelProps) {
   return (
     <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 0.75 }}>
       <Typography component="label" htmlFor={htmlFor} sx={{ fontSize: 13, fontWeight: 700 }}>
@@ -77,28 +98,28 @@ function FieldLabel({ htmlFor, children, action }) {
 }
 
 export default function AuthPage() {
-  const dispatch = useDispatch()
-  const { user, status, error } = useSelector((state) => state.auth)
+  const dispatch = useAppDispatch()
+  const { user, status, error } = useAppSelector((state) => state.auth)
 
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState<AuthMode>('login')
   const [showPassword, setShowPassword] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState<AuthForm>({ name: '', email: '', password: '', confirm: '' })
   const [formError, setFormError] = useState('')
 
   const isLoading = status === 'loading'
 
-  const switchMode = (_event, nextMode) => {
+  const switchMode = (_event: MouseEvent<HTMLElement>, nextMode: AuthMode | null) => {
     if (!nextMode || nextMode === mode) return
     setMode(nextMode)
     setFormError('')
     dispatch(clearAuthError())
   }
 
-  const handleChange = (field) => (event) => {
+  const handleChange = (field: keyof AuthForm) => (event: ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError('')
 

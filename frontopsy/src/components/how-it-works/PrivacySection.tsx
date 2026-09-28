@@ -2,9 +2,9 @@ import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import { INK } from '../../theme'
-import { PRIVACY_ITEMS } from '../../utils/constants'
+import { PRIVACY_ITEMS, type TitledItem } from '../../utils/constants'
 
-function PrivacyCard({ title, body }) {
+function PrivacyCard({ title, body }: TitledItem) {
   return (
     <Paper
       sx={{

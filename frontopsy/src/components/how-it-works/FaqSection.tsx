@@ -5,9 +5,9 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import Collapse from '@mui/material/Collapse'
 import { INK } from '../../theme'
-import { PLAN_ORANGE, FAQ_ITEMS } from '../../utils/constants'
+import { PLAN_ORANGE, FAQ_ITEMS, type FaqItem } from '../../utils/constants'
 
-function ToggleIcon({ open }) {
+function ToggleIcon({ open }: { open: boolean }) {
   return (
     <Box
       sx={{
@@ -30,7 +30,12 @@ function ToggleIcon({ open }) {
   )
 }
 
-function FaqRow({ question, answer, open, onToggle }) {
+interface FaqRowProps extends FaqItem {
+  open: boolean
+  onToggle: () => void
+}
+
+function FaqRow({ question, answer, open, onToggle }: FaqRowProps) {
   return (
     <Paper
       onClick={onToggle}

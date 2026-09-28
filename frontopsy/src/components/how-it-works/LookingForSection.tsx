@@ -3,9 +3,13 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { INK } from '../../theme'
-import { PLAN_ORANGE, WHY_BROKEN_ITEMS, WHY_SLOW_ITEMS } from '../../utils/constants'
+import { PLAN_ORANGE, WHY_BROKEN_ITEMS, WHY_SLOW_ITEMS, type TitledItem } from '../../utils/constants'
 
-function ItemRow({ title, body, dotColor }) {
+interface ItemRowProps extends TitledItem {
+  dotColor: string
+}
+
+function ItemRow({ title, body, dotColor }: ItemRowProps) {
   return (
     <Paper
       sx={{
@@ -36,7 +40,14 @@ function ItemRow({ title, body, dotColor }) {
   )
 }
 
-function LookingForCard({ bgcolor, title, items, dotColor }) {
+interface LookingForCardProps {
+  bgcolor: string
+  title: string
+  items: TitledItem[]
+  dotColor: string
+}
+
+function LookingForCard({ bgcolor, title, items, dotColor }: LookingForCardProps) {
   return (
     <Paper
       sx={{

@@ -5,7 +5,13 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { INK } from '../theme'
 
-export default function LoginPromptDialog({ open, onClose, onLogin }) {
+interface LoginPromptDialogProps {
+  open: boolean
+  onClose: () => void
+  onLogin: () => void
+}
+
+export default function LoginPromptDialog({ open, onClose, onLogin }: LoginPromptDialogProps) {
   return (
     <Dialog
       open={open}

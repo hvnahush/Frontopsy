@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
@@ -6,9 +6,17 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import { INK } from '../theme'
-import { CHECKUP_TABS, STEP_ORANGE } from '../utils/constants'
+import { CHECKUP_TABS, STEP_ORANGE, type CheckupTab } from '../utils/constants'
 
-function LinkPanel({ onRequireAuth }) {
+interface PanelProps {
+  onRequireAuth: () => void
+}
+
+interface DashboardProps extends PanelProps {
+  checkedCount: number
+}
+
+function LinkPanel({ onRequireAuth }: PanelProps) {
   return (
     <Box>
       <Typography sx={labelSx}>Your site's link</Typography>
@@ -27,7 +35,7 @@ function LinkPanel({ onRequireAuth }) {
   )
 }
 
-function PasteCodePanel({ onRequireAuth }) {
+function PasteCodePanel({ onRequireAuth }: PanelProps) {
   return (
     <Box>
       <Typography sx={labelSx}>Paste your HTML / CSS</Typography>
@@ -46,7 +54,7 @@ function PasteCodePanel({ onRequireAuth }) {
   )
 }
 
-function ScreenshotPanel({ onRequireAuth }) {
+function ScreenshotPanel({ onRequireAuth }: PanelProps) {
   return (
     <Box>
       <Typography sx={labelSx}>Upload a screenshot</Typography>
@@ -68,14 +76,14 @@ function ScreenshotPanel({ onRequireAuth }) {
   )
 }
 
-const TAB_PANELS = {
+const TAB_PANELS: Record<CheckupTab, ComponentType<PanelProps>> = {
   Link: LinkPanel,
   'Paste code': PasteCodePanel,
   Screenshot: ScreenshotPanel,
 }
 
-export default function Dashboard({ onRequireAuth, checkedCount }) {
-  const [tab, setTab] = useState('Link')
+export default function Dashboard({ onRequireAuth, checkedCount }: DashboardProps) {
+  const [tab, setTab] = useState<CheckupTab>('Link')
   const TabPanel = TAB_PANELS[tab]
 
   return (

@@ -7,15 +7,15 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { store } from './app/store'
 import { theme } from './theme'
 import './index.css'
-import App from './App.jsx'
+import App from './App'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <GoogleOAuthProvider clientId={googleClientId}>
+      <GoogleOAuthProvider clientId={googleClientId ?? ''}>
         <Provider store={store}>
           <App />
         </Provider>

@@ -1,7 +1,29 @@
 const USERS_KEY = 'frontopsy_users'
 const SESSION_KEY = 'frontopsy_session'
 
-async function hashPassword(password) {
+export type AuthProvider = 'email' | 'google'
+
+export interface User {
+  name: string
+  email: string
+  provider: AuthProvider
+  avatar?: string
+}
+
+interface StoredUser extends User {
+  passwordHash?: string
+}
+
+export interface Credentials {
+  email: string
+  password: string
+}
+
+export interface SignupDetails extends Credentials {
+  name: string
+}
+
+async function hashPassword(password: string): Promise<string> {
   const data = new TextEncoder().encode(password)
   const digest = await crypto.subtle.digest('SHA-256', data)
   return Array.from(new Uint8Array(digest))
@@ -9,19 +31,19 @@ async function hashPassword(password) {
     .join('')
 }
 
-function readUsers() {
+function readUsers(): StoredUser[] {
   try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) ?? []
+    return JSON.parse(localStorage.getItem(USERS_KEY) ?? 'null') ?? []
   } catch {
     return []
   }
 }
 
-function writeUsers(users) {
+function writeUsers(users: StoredUser[]) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users))
 }
 
-export async function registerUser({ name, email, password }) {
+export async function registerUser({ name, email, password }: SignupDetails): Promise<User> {
   const users = readUsers()
   const normalizedEmail = email.trim().toLowerCase()
 
@@ -30,13 +52,13 @@ export async function registerUser({ name, email, password }) {
   }
 
   const passwordHash = await hashPassword(password)
-  const user = { name, email: normalizedEmail, passwordHash, provider: 'email' }
+  const user: StoredUser = { name, email: normalizedEmail, passwordHash, provider: 'email' }
   writeUsers([...users, user])
 
   return { name: user.name, email: user.email, provider: user.provider }
 }
 
-export async function authenticateUser({ email, password }) {
+export async function authenticateUser({ email, password }: Credentials): Promise<User> {
   const users = readUsers()
   const normalizedEmail = email.trim().toLowerCase()
   const passwordHash = await hashPassword(password)
@@ -52,7 +74,7 @@ export async function authenticateUser({ email, password }) {
   return { name: user.name, email: user.email, provider: user.provider }
 }
 
-export function upsertOAuthUser({ name, email, provider, avatar }) {
+export function upsertOAuthUser({ name, email, provider, avatar }: User): User {
   const users = readUsers()
   const normalizedEmail = email.trim().toLowerCase()
   const existing = users.find((u) => u.email === normalizedEmail)
@@ -64,13 +86,13 @@ export function upsertOAuthUser({ name, email, provider, avatar }) {
   return { name, email: normalizedEmail, provider, avatar }
 }
 
-export function saveSession(user) {
+export function saveSession(user: User) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(user))
 }
 
-export function readSession() {
+export function readSession(): User | null {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY))
+    return JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null')
   } catch {
     return null
   }

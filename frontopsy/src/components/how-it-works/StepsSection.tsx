@@ -4,9 +4,9 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import { INK } from '../../theme'
-import { HOW_IT_WORKS_STEPS } from '../../utils/constants'
+import { HOW_IT_WORKS_STEPS, type HowItWorksStep } from '../../utils/constants'
 
-function StepCard({ number, color, title, body, chips }) {
+function StepCard({ number, color, title, body, chips }: HowItWorksStep) {
   return (
     <Paper
       sx={{

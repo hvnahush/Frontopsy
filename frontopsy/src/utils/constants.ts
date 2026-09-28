@@ -1,7 +1,44 @@
 export const STEP_ORANGE = '#f5a938'
 export const PLAN_ORANGE = '#ff7a3d'
 
-export const SYMPTOMS = [
+export interface Symptom {
+  key: string
+  label: string
+  checked: boolean
+}
+
+export interface TitledItem {
+  title: string
+  body: string
+}
+
+export interface HowItWorksStep extends TitledItem {
+  number: number
+  color: string
+  chips: string[]
+}
+
+export interface FixExampleState extends TitledItem {
+  chips: string[]
+  code: string
+  score: number
+  scoreLabel: string
+  scoreNote: string
+}
+
+export type FixExampleView = 'before' | 'after'
+
+export interface UnderHoodItem extends TitledItem {
+  eyebrow: string
+  accent: string
+}
+
+export interface FaqItem {
+  question: string
+  answer: string
+}
+
+export const SYMPTOMS: Symptom[] = [
   { key: 'slow', label: 'slow af', checked: true },
   { key: 'broken', label: 'broken on phones', checked: true },
   { key: 'overlap', label: 'stuff overlapping', checked: true },
@@ -11,9 +48,11 @@ export const SYMPTOMS = [
   { key: 'images', label: 'images take ages', checked: false },
 ]
 
-export const CHECKUP_TABS = ['Link', 'Paste code', 'Screenshot']
+export const CHECKUP_TABS = ['Link', 'Paste code', 'Screenshot'] as const
 
-export const HOW_IT_WORKS_STEPS = [
+export type CheckupTab = (typeof CHECKUP_TABS)[number]
+
+export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   {
     number: 1,
     color: 'secondary.main',
@@ -37,7 +76,7 @@ export const HOW_IT_WORKS_STEPS = [
   },
 ]
 
-export const WHY_SLOW_ITEMS = [
+export const WHY_SLOW_ITEMS: TitledItem[] = [
   { title: 'Render-blocking scripts', body: 'JavaScript that stops the page from showing until it loads.' },
   { title: 'Chonky images', body: 'Huge PNGs and JPGs that could be a fraction of the size.' },
   { title: 'Bloated bundles', body: 'Whole libraries shipped for one function.' },
@@ -45,7 +84,7 @@ export const WHY_SLOW_ITEMS = [
   { title: 'Slow servers and redirects', body: 'Time wasted before the first byte even arrives.' },
 ]
 
-export const WHY_BROKEN_ITEMS = [
+export const WHY_BROKEN_ITEMS: TitledItem[] = [
   { title: 'Overlapping elements', body: 'Navs, buttons and text stacked on top of each other.' },
   { title: 'Sideways scroll', body: 'Something wider than the screen pushing everything off.' },
   { title: 'Layout jumps', body: 'Content shoving down as images and ads load in.' },
@@ -53,7 +92,7 @@ export const WHY_BROKEN_ITEMS = [
   { title: 'Clipped or tiny text', body: 'Words cut off, or too small to read.' },
 ]
 
-export const FIX_EXAMPLE = {
+export const FIX_EXAMPLE: Record<FixExampleView, FixExampleState> = {
   before: {
     chips: ['big yikes', 'broken', 'example'],
     title: 'Nav sits on top of the headline on phones',
@@ -74,7 +113,7 @@ export const FIX_EXAMPLE = {
   },
 }
 
-export const UNDER_HOOD_ITEMS = [
+export const UNDER_HOOD_ITEMS: UnderHoodItem[] = [
   {
     eyebrow: '01 / real browser',
     title: 'Playwright + Chrome',
@@ -95,13 +134,13 @@ export const UNDER_HOOD_ITEMS = [
   },
 ]
 
-export const PRIVACY_ITEMS = [
+export const PRIVACY_ITEMS: TitledItem[] = [
   { title: 'Never used for training', body: 'Your code and screenshots are only used for your checkup.' },
   { title: 'Deleted after 30 days', body: 'Uploads are wiped automatically. Your saved diagnosis stays until you delete it.' },
   { title: 'One-click delete', body: 'Remove any checkup, or your whole account, any time.' },
 ]
 
-export const FAQ_ITEMS = [
+export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Is it free?',
     answer: "Yes, you can run checkups for free. Heavy users may hit a daily limit, and we'll tell you clearly if you do.",
