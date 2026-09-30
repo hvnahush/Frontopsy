@@ -39,6 +39,41 @@ function isValidSiteUrl(value: string) {
   }
 }
 
+// Uploads go through Vercel's proxy, which caps request size, and the AI doesn't need
+// more detail than this anyway. Small screenshots are sent untouched.
+const UPLOAD_MAX_WIDTH = 1600
+const UPLOAD_MAX_HEIGHT = 8000
+const UPLOAD_TARGET_BYTES = 1.5 * 1024 * 1024
+
+function readAsDataUrl(file: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+async function shrinkScreenshot(file: File): Promise<string> {
+  const original = await readAsDataUrl(file)
+  const image = new Image()
+  image.src = original
+  await image.decode()
+
+  const scale = Math.min(1, UPLOAD_MAX_WIDTH / image.naturalWidth, UPLOAD_MAX_HEIGHT / image.naturalHeight)
+  if (scale === 1 && file.size <= UPLOAD_TARGET_BYTES) return original
+
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(image.naturalWidth * scale)
+  canvas.height = Math.round(image.naturalHeight * scale)
+  const context = canvas.getContext('2d')
+  if (!context) return original
+  context.fillStyle = '#fff' // JPEG has no transparency
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/jpeg', 0.85)
+}
+
 function LinkPanel({ value, onChange }: PanelProps<string>) {
   const showError = value.trim() !== '' && !isValidSiteUrl(value)
 
@@ -93,10 +128,9 @@ function ScreenshotPanel({ value, onChange }: PanelProps<Screenshot | null>) {
     if (file.size > MAX_SCREENSHOT_BYTES) return setError('Screenshots need to be under 10 MB.')
     setError('')
 
-    const reader = new FileReader()
-    reader.onload = () => onChange({ file, previewUrl: reader.result as string })
-    reader.onerror = () => setError('Couldn’t read that file. Try another one.')
-    reader.readAsDataURL(file)
+    shrinkScreenshot(file)
+      .then((previewUrl) => onChange({ file, previewUrl }))
+      .catch(() => setError('Couldn’t read that file. Try another one.'))
   }
 
   const openPicker = () => inputRef.current?.click()
