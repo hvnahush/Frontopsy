@@ -1,13 +1,17 @@
 import cookieParser from 'cookie-parser'
 import express, { type ErrorRequestHandler } from 'express'
 import { authRouter } from './auth/routes.js'
+import { checkupsRouter } from './checkups/routes.js'
 import { pool } from './db/pool.js'
 import { HttpError } from './httpError.js'
 
 export const app = express()
 
 app.disable('x-powered-by')
-app.use(express.json({ limit: '10kb' }))
+// Starting a checkup can carry a screenshot as base64 (see MAX_IMAGE_BYTES in
+// checkups/screenshotCheckup.ts); everything else stays small.
+app.post('/api/checkups', express.json({ limit: '15mb' }))
+app.use(express.json({ limit: '200kb' }))
 app.use(cookieParser())
 
 app.get('/api/health', async (_req, res) => {
@@ -16,6 +20,7 @@ app.get('/api/health', async (_req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api/checkups', checkupsRouter)
 
 app.use((_req, _res, next) => {
   next(new HttpError(404, 'Not found.'))
