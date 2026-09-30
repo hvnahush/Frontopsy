@@ -1,0 +1,6 @@
+# Files gcloud won't upload with `gcloud run deploy --source`. Secrets stay local.
+node_modules/
+dist/
+.env
+.env.*
+*.log

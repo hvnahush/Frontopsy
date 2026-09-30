@@ -23,7 +23,6 @@ for (const [network, prefix] of [
 for (const [network, prefix] of [
   ['::', 128],
   ['::1', 128],
-  ['::ffff:0:0', 96],
   ['64:ff9b::', 96],
   ['fc00::', 7],
   ['fe80::', 10],
@@ -33,6 +32,17 @@ for (const [network, prefix] of [
 }
 
 function isPrivateAddress(address: string) {
+  // An IPv4-mapped IPv6 address (::ffff:10.0.0.1) is really the IPv4 address inside it.
+  // (A ::ffff:0:0/96 rule can't be used instead: BlockList checks every IPv4 address
+  // against IPv6 rules in that mapped form, so it would block everything.)
+  const dotted = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)?.[1]
+  if (dotted) return isPrivateAddress(dotted)
+  // URL parsing rewrites it in hex, e.g. [::ffff:127.0.0.1] becomes [::ffff:7f00:1].
+  const hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(address)
+  if (hex) {
+    const [high, low] = [parseInt(hex[1]!, 16), parseInt(hex[2]!, 16)]
+    return isPrivateAddress(`${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`)
+  }
   const family = isIP(address)
   if (family === 0) return true
   return privateRanges.check(address, family === 4 ? 'ipv4' : 'ipv6')

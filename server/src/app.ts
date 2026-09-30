@@ -1,6 +1,7 @@
 import cookieParser from 'cookie-parser'
 import express, { type ErrorRequestHandler } from 'express'
 import { authRouter } from './auth/routes.js'
+import { config } from './config.js'
 import { checkupsRouter } from './checkups/routes.js'
 import { pool } from './db/pool.js'
 import { HttpError } from './httpError.js'
@@ -8,6 +9,7 @@ import { HttpError } from './httpError.js'
 export const app = express()
 
 app.disable('x-powered-by')
+app.set('trust proxy', config.TRUST_PROXY_HOPS)
 // Starting a checkup can carry a screenshot as base64 (see MAX_IMAGE_BYTES in
 // checkups/screenshotCheckup.ts); everything else stays small.
 app.post('/api/checkups', express.json({ limit: '15mb' }))

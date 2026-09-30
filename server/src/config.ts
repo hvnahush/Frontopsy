@@ -17,6 +17,10 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().min(1).optional(),
   // Comma-separated models to try in order; later ones are fallbacks when earlier ones are busy.
   GEMINI_MODELS: z.string().default('gemini-3.8-flash,gemini-flash-latest,gemini-3-flash-preview,gemini-3.1-flash-lite'),
+  // How many proxies sit in front of the server, so rate limits see the visitor's real IP.
+  // Vercel's /api rewrite plus Google's front end on Cloud Run makes 2. Keep 0 when nothing does,
+  // otherwise visitors could fake their IP with an X-Forwarded-For header.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   // Lets checkups load localhost and private-network sites. Handy for testing your own dev server,
   // but it must stay off anywhere the public can start checkups.
   CHECKUP_ALLOW_PRIVATE_URLS: z
