@@ -7,3 +7,14 @@ body,
 body {
   margin: 0;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

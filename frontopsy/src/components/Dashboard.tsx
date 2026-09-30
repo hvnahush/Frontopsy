@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
@@ -6,14 +7,17 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import { startCheckup } from '../features/checkups/checkupsApi'
 import { INK } from '../theme'
 import { CHECKUP_TABS, STEP_ORANGE, type CheckupTab } from '../utils/constants'
 
-const SCREENSHOT_TYPES = ['image/png', 'image/jpeg']
+const SCREENSHOT_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024
 
 interface DashboardProps {
-  checkedCount: number
+  /** Labels of the symptoms ticked on the page, passed to the AI as context. */
+  symptoms: string[]
 }
 
 interface Screenshot {
@@ -61,7 +65,7 @@ function LinkPanel({ value, onChange }: PanelProps<string>) {
 function PasteCodePanel({ value, onChange }: PanelProps<string>) {
   return (
     <Box>
-      <Typography sx={labelSx}>Paste your HTML / CSS</Typography>
+      <Typography sx={labelSx}>Paste your code</Typography>
       <TextField
         fullWidth
         multiline
@@ -72,7 +76,9 @@ function PasteCodePanel({ value, onChange }: PanelProps<string>) {
         onChange={(event) => onChange(event.target.value)}
         sx={{ mb: 1, '& textarea': { fontFamily: 'ui-monospace, monospace', fontSize: 13 } }}
       />
-      <Typography sx={helperSx}>We render it in a sandboxed page and run the same checks.</Typography>
+      <Typography sx={helperSx}>
+        We render it in a sandboxed browser on a phone and a laptop, then AI debugs it and writes the fix.
+      </Typography>
     </Box>
   )
 }
@@ -83,7 +89,7 @@ function ScreenshotPanel({ value, onChange }: PanelProps<Screenshot | null>) {
 
   const acceptFile = (file: File | undefined) => {
     if (!file) return
-    if (!SCREENSHOT_TYPES.includes(file.type)) return setError('That file isn’t a PNG or JPG.')
+    if (!SCREENSHOT_TYPES.includes(file.type)) return setError('That file isn’t a PNG, JPG or WebP image.')
     if (file.size > MAX_SCREENSHOT_BYTES) return setError('Screenshots need to be under 10 MB.')
     setError('')
 
@@ -141,7 +147,7 @@ function ScreenshotPanel({ value, onChange }: PanelProps<Screenshot | null>) {
             <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Click to swap it for another</Typography>
           </Stack>
         ) : (
-          <Typography sx={{ fontWeight: 700 }}>Click or drop a PNG or JPG here</Typography>
+          <Typography sx={{ fontWeight: 700 }}>Click or drop a PNG, JPG or WebP here</Typography>
         )}
       </Box>
       {error && (
@@ -149,17 +155,20 @@ function ScreenshotPanel({ value, onChange }: PanelProps<Screenshot | null>) {
           {error}
         </Typography>
       )}
-      <Typography sx={helperSx}>We'll eyeball it for overlaps, spacing, and broken layout.</Typography>
+      <Typography sx={helperSx}>AI looks it over for overlaps, cut-off text, spacing and broken layout, then writes the fixes.</Typography>
     </Box>
   )
 }
 
-export default function Dashboard({ checkedCount }: DashboardProps) {
+export default function Dashboard({ symptoms }: DashboardProps) {
+  const checkedCount = symptoms.length
   const [tab, setTab] = useState<CheckupTab>('Link')
   const [link, setLink] = useState('')
   const [code, setCode] = useState('')
   const [screenshot, setScreenshot] = useState<Screenshot | null>(null)
-  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+  const [starting, setStarting] = useState(false)
+  const navigate = useNavigate()
 
   const ready = {
     Link: isValidSiteUrl(link),
@@ -169,12 +178,25 @@ export default function Dashboard({ checkedCount }: DashboardProps) {
 
   const selectTab = (label: CheckupTab) => {
     setTab(label)
-    setNotice('')
+    setError('')
   }
 
-  const runCheckup = () => {
-    // The analysis service isn't built yet; be upfront instead of faking a result.
-    setNotice('Your input looks good! Checkups aren’t live yet — the analysis engine is still being built.')
+  const runCheckup = async () => {
+    setError('')
+    setStarting(true)
+    try {
+      const checkup = await startCheckup(
+        tab === 'Link'
+          ? { url: link.trim() }
+          : tab === 'Paste code'
+            ? { code, symptoms }
+            : { screenshot: screenshot!.previewUrl, symptoms },
+      )
+      navigate(`/checkups/${checkup.id}`)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.')
+      setStarting(false)
+    }
   }
 
   return (
@@ -260,17 +282,19 @@ export default function Dashboard({ checkedCount }: DashboardProps) {
           variant="contained"
           size="large"
           onClick={runCheckup}
-          disabled={!ready}
+          disabled={!ready || starting}
+          startIcon={starting ? <CircularProgress size={18} thickness={6} color="inherit" /> : undefined}
           sx={{ py: 1.5, fontSize: 16, mt: 3 }}
         >
-          Run the vibe check
+          {starting ? 'Starting the checkup…' : 'Run the vibe check'}
         </Button>
 
-        {notice && (
-          <Alert severity="info" onClose={() => setNotice('')} sx={{ mt: 2 }}>
-            {notice}
+        {error && (
+          <Alert severity="error" onClose={() => setError('')} sx={{ mt: 2 }}>
+            {error}
           </Alert>
         )}
+
 
         <Typography sx={{ textAlign: 'center', fontSize: 12.5, color: 'text.secondary', mt: 2 }}>
           {checkedCount} symptoms picked. Takes about 30 seconds.

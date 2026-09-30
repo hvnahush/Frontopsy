@@ -7,9 +7,9 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Link from '@mui/material/Link'
-import Snackbar from '@mui/material/Snackbar'
 import Dashboard from '../components/Dashboard'
 import Logo from '../components/Logo'
+import PastCheckupsDialog from '../components/PastCheckupsDialog'
 import UserMenu from '../components/UserMenu'
 import { INK } from '../theme'
 import { PLAN_ORANGE, SYMPTOMS } from '../utils/constants'
@@ -51,12 +51,10 @@ function InfoCard({ bgcolor, textColor = INK, title, body }: InfoCardProps) {
 
 export default function Home() {
   const navigate = useNavigate()
-  const [toast, setToast] = useState('')
+  const [pastOpen, setPastOpen] = useState(false)
   const [checkedSymptoms, setCheckedSymptoms] = useState(
     () => new Set(SYMPTOMS.filter((s) => s.checked).map((s) => s.key)),
   )
-
-  const checkedCount = checkedSymptoms.size
 
   const toggleSymptom = (key: string) => {
     setCheckedSymptoms((current) => {
@@ -65,10 +63,6 @@ export default function Home() {
       else next.add(key)
       return next
     })
-  }
-
-  const openPastCheckups = () => {
-    setToast('No past checkups yet. Run your first one to start your history.')
   }
 
   return (
@@ -98,7 +92,7 @@ export default function Home() {
           >
             How it works
           </Link>
-          <Button variant="outlined" onClick={openPastCheckups} sx={{ borderRadius: 999, px: 2.5 }}>
+          <Button variant="outlined" onClick={() => setPastOpen(true)} sx={{ borderRadius: 999, px: 2.5 }}>
             past checkups
           </Button>
           <UserMenu />
@@ -174,7 +168,7 @@ export default function Home() {
           </Stack>
         </Box>
 
-        <Dashboard checkedCount={checkedCount} />
+        <Dashboard symptoms={SYMPTOMS.filter((s) => checkedSymptoms.has(s.key)).map((s) => s.label)} />
       </Box>
 
       <Box
@@ -206,13 +200,7 @@ export default function Home() {
         />
       </Box>
 
-      <Snackbar
-        open={toast !== ''}
-        autoHideDuration={4000}
-        onClose={() => setToast('')}
-        message={toast}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+      <PastCheckupsDialog open={pastOpen} onClose={() => setPastOpen(false)} />
     </Box>
   )
 }

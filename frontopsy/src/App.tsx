@@ -3,6 +3,7 @@ import { GuestOnly, RequireAuth } from './components/RouteGuards'
 import Home from './pages/Home'
 import HowItWorks from './pages/HowItWorks'
 import AuthPage from './pages/AuthPage'
+import CheckupReport from './pages/CheckupReport'
 
 function App() {
   return (
@@ -33,6 +34,8 @@ function App() {
             </RequireAuth>
           }
         />
+        {/* Public so reports can be shared by link. */}
+        <Route path="/checkups/:id" element={<CheckupReport />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
