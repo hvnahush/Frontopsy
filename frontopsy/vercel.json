@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE-WITH-YOUR-CLOUD-RUN-URL/api/:path*"
+      "destination": "https://frontopsy-api-561034761189.australia-southeast1.run.app/api/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
