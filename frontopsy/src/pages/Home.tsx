@@ -10,6 +10,7 @@ import Link from '@mui/material/Link'
 import Dashboard from '../components/Dashboard'
 import Logo from '../components/Logo'
 import PastCheckupsDialog from '../components/PastCheckupsDialog'
+import SiteFooter from '../components/SiteFooter'
 import UserMenu from '../components/UserMenu'
 import { INK } from '../theme'
 import { PLAN_ORANGE, SYMPTOMS } from '../utils/constants'
@@ -199,6 +200,8 @@ export default function Home() {
           body="Every fix with copy-paste code, ranked by what helps most."
         />
       </Box>
+
+      <SiteFooter />
 
       <PastCheckupsDialog open={pastOpen} onClose={() => setPastOpen(false)} />
     </Box>

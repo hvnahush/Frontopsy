@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography'
 import { useAppSelector } from '../app/hooks'
 import { ApiError } from '../app/apiClient'
 import Logo from '../components/Logo'
+import SiteFooter from '../components/SiteFooter'
 import UserMenu from '../components/UserMenu'
 import CheckupLoading from '../components/report/CheckupLoading'
 import FixedCode from '../components/report/FixedCode'
@@ -376,6 +377,8 @@ function CheckupReport({ id }: { id: string }) {
           </Box>
         )}
       </Box>
+
+      <SiteFooter />
 
       <Snackbar
         open={toast !== ''}

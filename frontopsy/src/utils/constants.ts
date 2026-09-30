@@ -1,3 +1,7 @@
+export const SUPPORT_EMAIL = 'hvnahush@gmail.com'
+export const FEEDBACK_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Frontopsy feedback')}`
+export const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Frontopsy help')}`
+
 export const STEP_ORANGE = '#f5a938'
 export const PLAN_ORANGE = '#ff7a3d'
 
@@ -156,6 +160,10 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'How accurate is it?',
     answer: 'The scores come from the same engines Google uses (Lighthouse), and every visual issue is backed by a real screenshot, not a guess.',
+  },
+  {
+    question: 'How do I get help or send feedback?',
+    answer: `Email ${SUPPORT_EMAIL}. Questions, bug reports and ideas are all welcome, and feedback genuinely shapes what we build next.`,
   },
   {
     question: 'Do I need to install anything?',

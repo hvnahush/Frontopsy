@@ -14,6 +14,7 @@ import PrivacySection from '../components/how-it-works/PrivacySection'
 import StepsSection from '../components/how-it-works/StepsSection'
 import UnderHoodSection from '../components/how-it-works/UnderHoodSection'
 import Logo from '../components/Logo'
+import SiteFooter from '../components/SiteFooter'
 import LoginPromptDialog from '../components/LoginPromptDialog'
 import UserMenu from '../components/UserMenu'
 import { INK } from '../theme'
@@ -156,6 +157,7 @@ export default function HowItWorks() {
       <UnderHoodSection />
       <PrivacySection />
       <FaqSection />
+      <SiteFooter />
 
       <LoginPromptDialog open={promptOpen} onClose={() => setPromptOpen(false)} onLogin={goToLogin} />
     </Box>

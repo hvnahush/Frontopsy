@@ -20,6 +20,7 @@ import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import Logo from '../components/Logo'
 import { INK } from '../theme'
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '../utils/constants'
 import { useAppDispatch, useAppSelector } from '../app/hooks'
 import { clearAuthError, login, loginWithGoogle, signup } from '../features/auth/authSlice'
 
@@ -429,6 +430,12 @@ export default function AuthPage() {
               ) : (
                 <>Already have an account? Hit Log in above.</>
               )}
+            </Typography>
+            <Typography sx={{ textAlign: 'center', fontSize: 13, color: 'text.secondary', mt: 1 }}>
+              Trouble getting in? Email{' '}
+              <Link href={SUPPORT_MAILTO} sx={{ fontWeight: 700, color: INK }}>
+                {SUPPORT_EMAIL}
+              </Link>
             </Typography>
           </Paper>
         </Box>
